@@ -4,3 +4,5 @@ MANIFEST
 README
 Verp.pm
 t/1.t
+doc/draft-varshavchik-verp-smtpext.txt
+doc/verp.txt

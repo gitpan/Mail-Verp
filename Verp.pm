@@ -6,7 +6,7 @@ use strict;
 use Carp;
 
 use vars qw($VERSION @ENCODE_MAP @DECODE_MAP);
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 my @chars =  qw(@ : % ! - [ ]);
 
@@ -35,7 +35,7 @@ sub encode
         return;
     }
 
-    my ($slocal, $sdomain) = $sender    =~ m/(.+)\@([^\@]+)$/;
+    my ($slocal, $sdomain) = $sender  =~ m/(.+)\@([^\@]+)$/;
 
     unless ($slocal && $sdomain){
         carp "Cannot parse sender address [$sender]";
@@ -68,7 +68,7 @@ sub decode
         return;
     }
 
-    if (my ($slocal, $rlocal, $rdomain, $sdomain) = $address =~ m/^([^-]+)-([^=]+)=([^\@]+)\@(.+)/){
+    if (my ($slocal, $rlocal, $rdomain, $sdomain) = $address =~ m/^(.+)-([^=]+)=([^\@]+)\@(.+)/){
 
         for (my $i = 0; $i < @DECODE_MAP; $i += 2) {
             for my $t ($rlocal, $rdomain){
@@ -76,11 +76,11 @@ sub decode
             }
         }
 
-        return (qq[$slocal\@$sdomain], qq[$rlocal\@$rdomain]);
+        return (qq[$slocal\@$sdomain], qq[$rlocal\@$rdomain]) if wantarray;
+        return qq[$rlocal\@$rdomain];
     }
     else {
-        carp "Cannot parse encoded address [$address]";
-        return;
+        return $address;
     }
 }
 
@@ -90,36 +90,53 @@ __END__
 
 =head1 NAME
 
-Mail::Verp - Perl extension for creating Variable Envelope Return Paths (VERP) addresses. 
+Mail::Verp - encodes and decodes Variable Envelope Return Paths (VERP) addresses. 
 
 =head1 SYNOPSIS
 
   use Mail::Verp;
-
-  my $verp = Mail::Verp->new;
-
   
   #Create a VERP envelope sender of an email to recipient@example.net.
-  my $verp_email = $verp->encode('sender@example.com', 'recipient@example.net');
+  my $verp_email = $Mail::Verp->encode('sender@example.com', 'recipient@example.net');
 
-  #If a bounce comes back, decode C<$verp_email> to figure out
+  #If a bounce comes back, decode $verp_email to figure out
   #the original recipient of the bounced mail.
-  my ($sender, $recipient) = $verp->decode($verp_email);
+  my ($sender, $recipient) = $Mail::Verp->decode($verp_email);
  
- 
-
+  
 =head1 ABSTRACT
 
-Mail::Verp encodes and decodes Variable Envelope Return Paths
-email addresses.
+Mail::Verp encodes and decodes Variable Envelope Return Paths (VERP) email addresses.
 
 =head1 DESCRIPTION
 
-Mail::Verp creates and decodes Variable Envelope Return Paths (VERP) addresses.
-Verp encodes the address of an email recipient into the envelope
+Mail::Verp encodes the address of an email recipient into the envelope
 sender address so that a bounce can be more easily handled even if the original recipient
 is forwarding their mail to another address and the remote Mail Transport Agents send back
-unhelpful bounce messages.
+unhelpful bounce messages. The module must also be used to decode bounce recipient addresses.
+
+=head1 FUNCTIONS
+
+=over
+
+=item new() 
+
+Primarily useful to save typing. So instead of typing C<Mail::Verp> you can say
+C<my $x = Mail::Verp->new;> then use C<$x> whereever C<Mail::Verp> is usually required.
+
+=item encode(LOCAL-ADDRESS, REMOTE-ADDRESS)
+
+Encodes LOCAL-ADDRESS, REMOTE-ADDRESS into a verped address suitable for use
+as an envelope, return, address. It may also be useful to use the same address in
+Errors-To and Reply-To headers to compensate for broken Mail Transport Agents.
+
+=item decode(VERPED-ADDRESS)
+
+Decodes VERPED-ADDRESS into its constituent parts.
+Returns LOCAL-ADDRESS and REMOTE-ADDRESS in list context, REMOTE-ADDRESS in scalar context.
+Returns VERPED-ADDRESS if the decoding fails.
+
+=back
 
 =head2 EXPORT
 
