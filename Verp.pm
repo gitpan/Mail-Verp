@@ -6,12 +6,13 @@ use strict;
 use Carp;
 
 use vars qw($VERSION @ENCODE_MAP @DECODE_MAP);
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 my @chars =  qw(@ : % ! - [ ]);
 
 @ENCODE_MAP = map { quotemeta($_), sprintf '%.2X', ord($_) } ('+', @chars);
 @DECODE_MAP = map { sprintf('%.2X', ord($_)), $_ } (@chars, '+');
+push @DECODE_MAP, map { lc $_ } @DECODE_MAP;
 
 sub new
 {

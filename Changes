@@ -1,5 +1,10 @@
 Revision history for Perl extension Mail::Verp.
 
+0.03  Tue Nov 11 2003
+  - Decode case insensitively: some MTA lowercase the bounce address.
+    Thanks to Adam Augustine <adama -at- augustinefam.org>
+  - Changed author email address.
+
 0.02  Fri Aug  8 22:56:52 2003
   - Fixed possible bug to allow for multiple hyphens in local address
   - Expanded and clarified documentation

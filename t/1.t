@@ -5,7 +5,7 @@
 
 
 use Test;
-BEGIN { plan tests => 8 };
+BEGIN { plan tests => 9 };
 use Mail::Verp;
 ok(1); # If we made it this far, we're ok.
 
@@ -47,4 +47,9 @@ while (my ($k, $v) = each %remote){
 
     ok($decoded_remote eq $k);
 }
+
+my $v1 = 'local-remote+2bfoo=example.com@source.com';
+
+my ($loc1, $rem1) = $x->decode($v1);
+ok($rem1 eq 'remote+foo@example.com');
 
