@@ -1,5 +1,8 @@
 Revision history for Perl extension Mail::Verp.
 
+0.04  Tue Nov 11 2003
+  - Simpler solution for case insensitivity decoding.
+
 0.03  Tue Nov 11 2003
   - Decode case insensitively: some MTA lowercase the bounce address.
     Thanks to Adam Augustine <adama -at- augustinefam.org>
