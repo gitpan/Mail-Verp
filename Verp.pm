@@ -5,18 +5,30 @@ use strict;
 
 use Carp;
 
-use vars qw($VERSION @ENCODE_MAP @DECODE_MAP);
-$VERSION = '0.04';
+use vars qw($VERSION @ENCODE_MAP @DECODE_MAP $SEPARATOR);
+$VERSION = '0.05';
 
 my @chars =  qw(@ : % ! - [ ]);
 
 @ENCODE_MAP = map { quotemeta($_), sprintf '%.2X', ord($_) } ('+', @chars);
 @DECODE_MAP = map { sprintf('%.2X', ord($_)), $_ } (@chars, '+');
 
+sub separator {
+  my $self = shift;
+  
+  if (@_){
+    $SEPARATOR = shift;
+  }
+
+  return $SEPARATOR;
+}
+
 sub new
 {
     my $self = shift;
-    $self = bless {}, ref($self) || $self;
+    $self = bless { separator => '-', @_ }, ref($self) || $self;
+    $self->separator($self->{separator});
+    return $self;
 }
 
 sub encode 
@@ -55,7 +67,7 @@ sub encode
         }
     }
 
-    return qq[$slocal-$rlocal=$rdomain\@$sdomain];
+    return join('', $slocal, $SEPARATOR, $rlocal, '=', $rdomain, '@', $sdomain);
 }
 
 sub decode
@@ -68,7 +80,10 @@ sub decode
         return;
     }
 
-    if (my ($slocal, $rlocal, $rdomain, $sdomain) = $address =~ m/^(.+)-([^=]+)=([^\@]+)\@(.+)/){
+    if (my ($slocal, $rlocal, $rdomain, $sdomain) = 
+        $address =~ m/^(.+?)\Q${SEPARATOR}\E([^=]+)=([^\@]+)\@(.+)/){
+  
+#        warn "$address $slocal $rlocal $rdomain $sdomain\n";
 
         for (my $i = 0; $i < @DECODE_MAP; $i += 2) {
             for my $t ($rlocal, $rdomain){
@@ -95,14 +110,32 @@ Mail::Verp - encodes and decodes Variable Envelope Return Paths (VERP) addresses
 =head1 SYNOPSIS
 
   use Mail::Verp;
-  
+ 
+  #Using class methods
+
+  #Change separator to something else
+  Mail::Verp->separator('+');
+
   #Create a VERP envelope sender of an email to recipient@example.net.
-  my $verp_email = $Mail::Verp->encode('sender@example.com', 'recipient@example.net');
+  my $verp_email = Mail::Verp->encode('sender@example.com', 'recipient@example.net');
 
   #If a bounce comes back, decode $verp_email to figure out
   #the original recipient of the bounced mail.
-  my ($sender, $recipient) = $Mail::Verp->decode($verp_email);
+  my ($sender, $recipient) = Mail::Verp->decode($verp_email);
  
+ 
+  #Using instance methods
+
+  my $verp = Mail::Verp->new(separator => '+');
+
+  #Create a VERP envelope sender of an email to recipient@example.net.
+  my $verp_email = $verp->encode('sender@example.com', 'recipient@example.net');
+
+  #Change separator back to default.
+  $verp->separator('-');
+
+  #Decode a bounce
+  my ($sender, $recipient) = $verp->decode($verp_email);
   
 =head1 ABSTRACT
 
@@ -122,7 +155,10 @@ unhelpful bounce messages. The module must also be used to decode bounce recipie
 =item new() 
 
 Primarily useful to save typing. So instead of typing C<Mail::Verp> you can say
-C<my $x = Mail::Verp->new;> then use C<$x> whereever C<Mail::Verp> is usually required.
+S<< my $x = Mail::Verp->new; >> then use C<$x> whereever C<Mail::Verp> is usually required.
+
+Accepts an optional C<separator> argument for changing the separator.
+S<< my $x = Mail::Verp->new(separator => '+'); >>
 
 =item encode(LOCAL-ADDRESS, REMOTE-ADDRESS)
 
@@ -130,11 +166,16 @@ Encodes LOCAL-ADDRESS, REMOTE-ADDRESS into a verped address suitable for use
 as an envelope, return, address. It may also be useful to use the same address in
 Errors-To and Reply-To headers to compensate for broken Mail Transport Agents.
 
+Uses current separator value, which defaults to hyphen '-', but can be changed
+using the C<separator> accessor.
+
 =item decode(VERPED-ADDRESS)
 
 Decodes VERPED-ADDRESS into its constituent parts.
 Returns LOCAL-ADDRESS and REMOTE-ADDRESS in list context, REMOTE-ADDRESS in scalar context.
 Returns VERPED-ADDRESS if the decoding fails.
+
+Uses current separator value.
 
 =back
 
@@ -144,12 +185,13 @@ None.
 
 =head1 SEE ALSO
 
-DJ Bernstein details verps here: http://cr.yp.to/proto/verp.txt
+DJ Bernstein details verps here: http://cr.yp.to/proto/verp.txt.
+
 Sam Varshavchik  proposes an encoding here: http://www.courier-mta.org/draft-varshavchik-verp-smtpext.txt.
 
 =head1 AUTHOR
 
-Gyepi Sam, E<lt>gyepi@cpan.orgE<gt>
+Gyepi Sam E<lt>gyepi@cpan.orgE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 

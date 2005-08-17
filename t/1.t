@@ -5,7 +5,7 @@
 
 
 use Test;
-BEGIN { plan tests => 9 };
+BEGIN { plan tests => 15 };
 use Mail::Verp;
 ok(1); # If we made it this far, we're ok.
 
@@ -17,9 +17,9 @@ ok(defined($x) && $x->isa('Mail::Verp'));
 
 
 my $sender = 'local@source.com';
-my %remote = qw(
-                remote+foo@example.com  local-remote+2Bfoo=example.com@source.com
-                node42!ann@old.example.com local-node42+21ann=old.example.com@source.com
+my %remote = (
+                'remote+foo@example.com',  [qw(local remote+2Bfoo=example.com@source.com)],
+                'node42!ann@old.example.com', [qw(local node42+21ann=old.example.com@source.com)]
                );
 =pod
 
@@ -29,27 +29,34 @@ print STDERR "$s $r2 encodes -> ", $x->encode($s, $r2), "\n";
 =cut
 
 
-while (my ($k, $v) = each %remote){
+while (my ($k, $r) = each %remote){
+    for my $sep (qw(- +)){
+      my $v = join($sep, @$r);
+      
+      $x->separator($sep);
+      
+      my $encoded = $x->encode($sender, $k);
 
-    my $encoded = $x->encode($sender, $k);
+      print "Checking if $k encodes to $encoded\n";
+      ok($encoded eq $v);
 
-    print "Checking if $k encodes to $encoded\n";
+      my ($decoded_sender, $decoded_remote) = $x->decode($encoded);
 
-    ok($encoded eq $v);
+      print "Checking if sender decodes to $sender\n";
+  
+      ok($decoded_sender eq $sender);
 
-    my ($decoded_sender, $decoded_remote) = $x->decode($encoded);
-   
-    print "Checking if sender decodes to $sender\n";
- 
-    ok($decoded_sender eq $sender);
+      print "Recipient $decoded_remote decodes to $k\n";
 
-    print "Recipient $decoded_remote decodes to $k\n";
-
-    ok($decoded_remote eq $k);
+      ok($decoded_remote eq $k);
+    }
 }
+
+$x->separator('-');
 
 my $v1 = 'local-remote+2bfoo=example.com@source.com';
 
 my ($loc1, $rem1) = $x->decode($v1);
 ok($rem1 eq 'remote+foo@example.com');
+
 
