@@ -1,4 +1,11 @@
 Revision history for Perl extension Mail::Verp.
+0.06 Fri Jun 19, 2007
+  - Make class methods use default separator as advertised.
+    Thanks to Peter Leonard <pete -at- peteleonard.com>
+  - Allow correct decoding of addresses with embedded equals sign (=).
+    Thanks to Joe Edmonds <joe -at- thisnext.com>
+  - Added more and better tests!
+    
 0.05 Wed Aug 17, 2005
  - Add accessor and parameter setting for separator.
    Thanks to Daniel Senie <dts -at- senie.com> 
